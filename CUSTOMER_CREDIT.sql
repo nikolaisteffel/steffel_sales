@@ -1,0 +1,71 @@
+--------------------------------------------------------
+--  File created - Monday-June-05-2017   
+--------------------------------------------------------
+--------------------------------------------------------
+--  DDL for Table CUSTOMER_CREDIT
+--------------------------------------------------------
+
+  CREATE TABLE "DEMO"."CUSTOMER_CREDIT" 
+   (	"CUSTOMER_ID" NUMBER(*,0), 
+	"FIRST_NAME" VARCHAR2(20 BYTE), 
+	"CREDIT" NUMBER(10,2)
+   ) SEGMENT CREATION IMMEDIATE 
+  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 NOCOMPRESS LOGGING
+  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "USERS" ;
+--------------------------------------------------------
+--  DDL for Index SYS_C0033723
+--------------------------------------------------------
+
+  CREATE UNIQUE INDEX "DEMO"."SYS_C0033723" ON "DEMO"."CUSTOMER_CREDIT" ("CUSTOMER_ID") 
+  PCTFREE 10 INITRANS 2 MAXTRANS 255 
+  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "USERS" ;
+--------------------------------------------------------
+--  DDL for Trigger TRG_CUSTOMER_CREDIT
+--------------------------------------------------------
+
+  CREATE OR REPLACE TRIGGER "DEMO"."TRG_CUSTOMER_CREDIT" 
+BEFORE INSERT or UPDATE on CUSTOMER_CREDIT
+REFERENCING new as newROW old as oldROW
+FOR EACH ROW
+DECLARE
+  ex_credit_limit EXCEPTION;
+BEGIN
+  IF (INSERTING) THEN
+    SELECT SEQ_CUSTOMER_ID.nextval INTO :newROW.CUSTOMER_ID
+    FROM   DUAL;
+
+    IF ((:newROW.CREDIT is NULL) or (:newROW.CREDIT < 0)) THEN
+      SELECT 100 INTO :newROW.CREDIT
+      FROM   DUAL;
+    END IF;
+
+  ELSIF (UPDATING) THEN
+    IF (:oldROW.CUSTOMER_ID <> :newROW.CUSTOMER_ID) THEN
+      raise_application_error (-20998, 'Cannot change the CUSTOMER_ID!');
+    END IF;
+
+    IF (:newROW.CREDIT < 0) THEN
+      raise_application_error (-20999, 'The credit ' || :newROW.CREDIT || ' is below zero!');
+    END IF;
+  END IF;
+  EXCEPTION
+    WHEN ex_credit_limit THEN
+      DBMS_OUTPUT.PUT_LINE('Fehler!!!');
+      DBMS_OUTPUT.PUT_LINE(SQLERRM);
+END;
+/
+ALTER TRIGGER "DEMO"."TRG_CUSTOMER_CREDIT" ENABLE;
+--------------------------------------------------------
+--  Constraints for Table CUSTOMER_CREDIT
+--------------------------------------------------------
+
+  ALTER TABLE "DEMO"."CUSTOMER_CREDIT" ADD PRIMARY KEY ("CUSTOMER_ID")
+  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 
+  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "USERS"  ENABLE;
+  ALTER TABLE "DEMO"."CUSTOMER_CREDIT" MODIFY ("CUSTOMER_ID" NOT NULL ENABLE);
